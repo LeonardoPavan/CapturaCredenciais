@@ -2,13 +2,23 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const bodyParser = require('body-parser');
 
-// Configuração do banco de dados SQLite
-const db = new sqlite3.Database(path.join(__dirname, 'db', 'banco.db'), (err) => {
+// Use o body-parser para lidar com requisições POST
+app.use(bodyParser.json());
+
+// Conectar ao banco de dados SQLite na memória (não persistente entre as execuções)
+const db = new sqlite3.Database(':memory:', (err) => {
   if (err) {
     console.error('Erro ao conectar ao banco de dados:', err.message);
   } else {
-    console.log('Conectado ao banco de dados SQLite');
+    console.log('Conectado ao banco de dados SQLite (na memória)');
+    // Criar uma tabela de exemplo
+    db.run('CREATE TABLE usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, usuario TEXT, senha TEXT)', (err) => {
+      if (err) {
+        console.error('Erro ao criar a tabela:', err.message);
+      }
+    });
   }
 });
 
@@ -31,10 +41,9 @@ app.get('/dados', (req, res) => {
 
 // Rota para capturar credenciais (como exemplo)
 app.post('/captura-credenciais', (req, res) => {
-  const { usuario, senha } = req.body; // Supondo que você está enviando as credenciais via POST
+  const { usuario, senha } = req.body;
   if (usuario && senha) {
-    // Simulando o armazenamento no banco de dados
-    db.run('INSERT INTO usuarios (usuario, senha) VALUES (?, ?)', [usuario, senha], (err) => {
+    db.run('INSERT INTO usuarios (usuario, senha) VALUES (?, ?)', [usuario, senha], function (err) {
       if (err) {
         res.status(500).send('Erro ao salvar as credenciais.');
         console.error(err.message);
